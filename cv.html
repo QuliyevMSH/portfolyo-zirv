@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV - Portfolio</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+<body class="bg-white">
+    <nav class="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl">
+        <div class="container mx-auto px-4">
+            <div class="flex h-16 items-center justify-between">
+                <a href="index.html" class="text-xl font-semibold">Portfolio</a>
+                <div class="flex gap-8">
+                    <a href="index.html" class="text-black/60 relative text-sm font-medium hover:text-black/80">Ana Səhifə</a>
+                    <a href="projects.html" class="text-black/60 relative text-sm font-medium hover:text-black/80">Layihələr</a>
+                    <a href="articles.html" class="text-black/60 relative text-sm font-medium hover:text-black/80">Məqalələr</a>
+                    <a href="cv.html" class="text-black relative text-sm font-medium">CV</a>
+                    <a href="contact.html" class="text-black/60 relative text-sm font-medium hover:text-black/80">Əlaqə</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="mx-auto max-w-3xl space-y-8">
+            <div class="text-center">
+                <span class="mb-2 inline-block rounded-full bg-black/5 px-3 py-1 text-sm font-medium">
+                    CV
+                </span>
+                <h1 class="mb-4 text-3xl font-bold sm:text-4xl">
+                    İş Təcrübəm
+                </h1>
+                <div class="flex justify-center">
+                    <a href="/cv.pdf" download class="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-black/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        CV-ni yüklə
+                    </a>
+                </div>
+            </div>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold">Təhsil</h2>
+                <div class="space-y-4">
+                    <div class="rounded-xl border bg-white p-6 shadow-sm">
+                        <h3 class="font-medium">Azərbaycan Texniki Universiteti</h3>
+                        <p class="text-sm text-black/60">Kompüter Mühəndisliyi</p>
+                        <p class="text-sm text-black/40">2018-2022</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold">İş Təcrübəsi</h2>
+                <div class="space-y-4">
+                    <div class="rounded-xl border bg-white p-6 shadow-sm">
+                        <h3 class="font-medium">Tech Solutions LLC</h3>
+                        <p class="text-sm text-black/60">Frontend Developer</p>
+                        <p class="text-sm text-black/40">2022-Present</p>
+                        <p class="mt-2 text-sm text-black/60">React və TypeScript istifadə edərək müxtəlif web layihələrinin hazırlanması</p>
+                    </div>
+                    <div class="rounded-xl border bg-white p-6 shadow-sm">
+                        <h3 class="font-medium">Digital Agency</h3>
+                        <p class="text-sm text-black/60">Junior Web Developer</p>
+                        <p class="text-sm text-black/40">2021-2022</p>
+                        <p class="mt-2 text-sm text-black/60">Kiçik və orta ölçülü biznes layihələri üçün web həllərinin hazırlanması</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold">Bacarıqlar</h2>
+                <div class="flex flex-wrap gap-2">
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">HTML/CSS</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">JavaScript</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">TypeScript</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">React</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">Node.js</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">Git</span>
+                    <span class="rounded-full bg-black/5 px-3 py-1 text-sm font-medium">Tailwind CSS</span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
