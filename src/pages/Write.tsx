@@ -8,22 +8,44 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+const STORY_CATEGORIES = [
+  "Nağıl", "Qısa hekayə", "Roman parçaları", "Fantastika", "Elmi-fantastika",
+  "Sehrli realizm", "Psixoloji", "Dram", "Komediya", "Romantika",
+  "Dəhşət / Qorxu", "Macəra", "Tarixi hadisələr"
+];
+
+const POEM_CATEGORIES = [
+  "Klassik şeir", "Müasir şeir", "Qəzəl", "Qoşma", "Bayatı", "Rübai",
+  "Poema", "Mahnı sözləri", "Sevgi", "Dostluq", "Vətən", "Təbiət",
+  "Uşaq", "Dini"
+];
 
 const Write = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [coverImage, setCoverImage] = useState<string>("");
+  const [description, setDescription] = useState("");
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
+  const [contentType, setContentType] = useState<"hekayə" | "şeir">("hekayə");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const currentCategories = contentType === "hekayə" ? STORY_CATEGORIES : POEM_CATEGORIES;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCoverImage(reader.result as string);
+        setCoverImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -40,23 +62,99 @@ const Write = () => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleSubmit = () => {
-    if (!title.trim() || !content.trim()) {
-      toast({
-        title: "Xəta",
-        description: "Başlıq və məzmun sahələri tələb olunur.",
-        variant: "destructive",
-      });
+  const handleCategoryToggle = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      setSelectedCategories(selectedCategories.filter((c) => c !== category));
+    } else {
+      if (selectedCategories.length < 5) {
+        setSelectedCategories([...selectedCategories, category]);
+      } else {
+        toast.error("Maksimum 5 kateqoriya seçə bilərsiniz");
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toast.error("Başlıq tələb olunur");
       return;
     }
 
-    toast({
-      title: "Uğurlu",
-      description: "Hekayəniz uğurla dərc edildi!",
-    });
+    if (selectedCategories.length === 0) {
+      toast.error("Ən azı 1 kateqoriya seçilməlidir");
+      return;
+    }
 
-    // Navigate to home after successful submission
-    setTimeout(() => navigate("/"), 1500);
+    setSubmitting(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Giriş etməlisiniz");
+      navigate("/auth");
+      return;
+    }
+
+    let coverImageUrl = "";
+
+    // Upload cover image if exists
+    if (coverImageFile) {
+      const fileExt = coverImageFile.name.split(".").pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("story-covers")
+        .upload(filePath, coverImageFile);
+
+      if (uploadError) {
+        toast.error("Şəkil yüklənərkən xəta baş verdi");
+        setSubmitting(false);
+        return;
+      }
+
+      const { data } = supabase.storage.from("story-covers").getPublicUrl(filePath);
+      coverImageUrl = data.publicUrl;
+    }
+
+    // Insert story
+    const { data: story, error } = await supabase
+      .from("stories")
+      .insert({
+        user_id: user.id,
+        title: title.trim(),
+        description: description.trim() || null,
+        cover_image_url: coverImageUrl || null,
+        tags: tags.length > 0 ? tags : null,
+        content_type: contentType,
+        categories: selectedCategories,
+        status: "draft",
+        is_chapters: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error("Hekayə yaradılarkən xəta baş verdi");
+      setSubmitting(false);
+      return;
+    }
+
+    // Create empty single_stories record for non-chapter stories
+    const { error: singleStoryError } = await supabase
+      .from("single_stories")
+      .insert({
+        story_id: story.id,
+        content: "",
+      });
+
+    if (singleStoryError) {
+      console.error("Single story creation error:", singleStoryError);
+      // Don't block the flow, just log the error
+    }
+
+    toast.success("Post uğurla yaradıldı! İndi məzmunu əlavə edə bilərsiniz.");
+    
+    // Navigate to edit page to add content
+    navigate(`/story/${story.id}/edit`);
   };
 
   return (
@@ -66,17 +164,73 @@ const Write = () => {
       <main className="container mx-auto max-w-4xl px-4 py-8">
         <Card className="shadow-inkora-lg">
           <CardHeader>
-            <CardTitle className="text-3xl">Yeni Hekayə Yaz</CardTitle>
+            <CardTitle className="text-3xl">Yeni Post Yaz</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Content Type Selection */}
+            <div className="space-y-2">
+              <Label>Məzmun növü</Label>
+              <RadioGroup
+                value={contentType}
+                onValueChange={(value) => {
+                  setContentType(value as "hekayə" | "şeir");
+                  setSelectedCategories([]);
+                }}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="hekayə" id="hekaye" />
+                  <Label htmlFor="hekaye" className="cursor-pointer font-normal">
+                    Hekayə
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="şeir" id="seir" />
+                  <Label htmlFor="seir" className="cursor-pointer font-normal">
+                    Şeir
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Category Selection */}
+            <div className="space-y-2">
+              <Label>Kateqoriyalar (1-5 ədəd seçin)</Label>
+              <div className="grid grid-cols-2 gap-3 rounded-lg border p-4">
+                {currentCategories.map((category) => (
+                  <div key={category} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={category}
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryToggle(category)}
+                      disabled={
+                        !selectedCategories.includes(category) &&
+                        selectedCategories.length >= 5
+                      }
+                    />
+                    <Label
+                      htmlFor={category}
+                      className="cursor-pointer text-sm font-normal leading-tight"
+                    >
+                      {category}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {selectedCategories.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Seçildi: {selectedCategories.length}/5
+                </p>
+              )}
+            </div>
+
             {/* Cover Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="cover-image">Üz Qapağı</Label>
-              {coverImage ? (
+              <Label htmlFor="cover-image">Üz Qapağı (İstəyə bağlı)</Label>
+              {coverImagePreview ? (
                 <div className="relative aspect-video overflow-hidden rounded-lg">
                   <img
-                    src={coverImage}
+                    src={coverImagePreview}
                     alt="Cover"
                     className="h-full w-full object-cover"
                   />
@@ -84,7 +238,10 @@ const Write = () => {
                     size="icon"
                     variant="destructive"
                     className="absolute right-2 top-2"
-                    onClick={() => setCoverImage("")}
+                    onClick={() => {
+                      setCoverImagePreview("");
+                      setCoverImageFile(null);
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -166,15 +323,15 @@ const Write = () => {
               )}
             </div>
 
-            {/* Content */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="content">Məzmun</Label>
+              <Label htmlFor="description">Açıqlama (İstəyə bağlı)</Label>
               <Textarea
-                id="content"
-                placeholder="Hekayənizi yazın..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={15}
+                id="description"
+                placeholder="Hekayəniz haqqında qısa məlumat..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
                 className="resize-none"
               />
             </div>
@@ -184,11 +341,12 @@ const Write = () => {
               <Button
                 variant="outline"
                 onClick={() => navigate("/")}
+                disabled={submitting}
               >
                 Ləğv et
               </Button>
-              <Button onClick={handleSubmit}>
-                Dərc et
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting ? "Yüklənir..." : "Post Yarat"}
               </Button>
             </div>
           </CardContent>
